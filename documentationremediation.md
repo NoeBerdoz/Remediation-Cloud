@@ -1,18 +1,30 @@
-#Documentation
+# Documentation
+This documentation is written for Debian GNU/Linux 9.11 (stretch)  
 
+You can check your Debian version with this command :
 
-##Install Fluentd
+    $ lsb_release -a
 
-###Set up NTP
-First of all, it's highly recommended that you set up NTP daemon.
+## Set up your system
+First of all make sure that your system is up to date
+Run :
+    
+    $ apt update
+    
+And
+    
+    $ apt upgrade
 
+Then, it's highly recommended that you set up NTP daemon.
+
+### Set up NTP
 Install NTP :
     
-    apt-get install ntp
+    $ apt-get install ntp
 
 Type this command to see servers you are syncing with.
 
-    ntpq -p
+    $ ntpq -p
     
 If you get this problem
 
@@ -20,11 +32,11 @@ If you get this problem
     
 Do the following and then try again :
 
-    dpkg-reconfigure ntp
+    $ dpkg-reconfigure ntp
     
 You should see something like this :
 
-    ntpq -p
+    $ ntpq -p
     
          remote           refid      st t when poll reach   delay   offset  jitter
     ==============================================================================
@@ -34,10 +46,10 @@ You should see something like this :
      mirror          .INIT.          16 u    -   64    0    0.000    0.000   0.001
 
 
-###Increase Max # of File Descriptors
+## Increase Max # of File Descriptors
 You can see the maximum number of file descriptors with this command :
 
-    ulimit -n
+    $ ulimit -n
 
 If your console show less then 65535 do the following :
 Go to /etc/security/limits.conf and add the following lines at the end of the file :
@@ -49,7 +61,7 @@ Go to /etc/security/limits.conf and add the following lines at the end of the fi
    
 Then reboot your machine
 
-###Optimize Network Kernel Parameters
+## Optimize Network Kernel Parameters
 Add these lines to your file at /etc/sysctl.conf
 
     net.core.somaxconn = 1024
@@ -65,4 +77,20 @@ Add these lines to your file at /etc/sysctl.conf
     
  After that, type this command so the changes can take effect :
  
-    sysctl -p
+    $ sysctl -p
+    
+## Install curl
+    
+    $ sudo apt install curl
+
+## Install Fluentd
+    
+    $ curl -L https://toolbelt.treasuredata.com/sh/install-debian-stretch-td-agent3.sh | sh
+
+## Launch Daemon
+
+    $ systemctl start td-agent.service
+    $ systemctl status td-agent-service
+    
+    
+{{ WORK IN PROGRESS NOE : https://docs.fluentd.org/installation/install-by-deb#step-2-launch-daemon}}
