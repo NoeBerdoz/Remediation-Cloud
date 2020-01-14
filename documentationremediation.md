@@ -90,7 +90,47 @@ Add these lines to your file at /etc/sysctl.conf
 ## Launch Daemon
 
     $ systemctl start td-agent.service
-    $ systemctl status td-agent-service
+    $ systemctl status td-agent.service
     
+## Install MongoDB
+
+    $ curl https://www.mongodb.org/static/pgp/server-4.0.asc | sudo apt-key add -
+
+Next we will create a source list for the MongoDB repo.
+
+    $ nano /etc/apt/sources.list.d/mongodb-org-4.0.list
+
+Paste the following in mongodb-org-4.0.list
+
+    deb http://repo.mongodb.org/apt/debian stretch/mongodb-org/4.0 main
+
+Save and close the file, then update your package cache
+
+    $ apt update
+
+Install the mongodb-org package
+
+    $ apt-get install mongodb-org
+
+Enable mongod service and then start it
+
+    $ systemctl enable mongod
+    $ systemctl start mongod
     
-{{ WORK IN PROGRESS NOE : https://docs.fluentd.org/installation/install-by-deb#step-2-launch-daemon}}
+Check the service status
+
+    $ systemctl status mongod
+    
+You should see an output like this
+
+    ● mongod.service - MongoDB Database Server
+       Loaded: loaded (/lib/systemd/system/mongod.service; enabled; vendor preset: enabled)
+       Active: active (running) since Wed 2018-09-05 16:59:56 UTC; 3s ago
+         Docs: https://docs.mongodb.org/manual
+     Main PID: 4321 (mongod)
+        Tasks: 26
+       CGroup: /system.slice/mongod.service
+               └─4321 /usr/bin/mongod --config /etc/mongod.conf 
+    
+{{ WORK IN PROGRESS NOE : https://www.digitalocean.com/community/tutorials/how-to-install-mongodb-on-debian-9}
+https://docs.fluentd.org/output/mongo}
