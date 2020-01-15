@@ -87,7 +87,7 @@ Add these lines to your file at /etc/sysctl.conf
     
     $ curl -L https://toolbelt.treasuredata.com/sh/install-debian-stretch-td-agent3.sh | sh
 
-## Launch Daemon
+### Launch Daemon
 
     $ systemctl start td-agent.service
     $ systemctl status td-agent.service
@@ -131,6 +131,171 @@ You should see an output like this
         Tasks: 26
        CGroup: /system.slice/mongod.service
                └─4321 /usr/bin/mongod --config /etc/mongod.conf 
+               
+               
+## Install NGINX
+
+    $ apt-get install nginx
+
+Now enable it
+
+    $ systemctl enable nginx
     
-{{ WORK IN PROGRESS NOE : https://www.digitalocean.com/community/tutorials/how-to-install-mongodb-on-debian-9}
-https://docs.fluentd.org/output/mongo}
+Check if the service NGINX is running
+
+    $ systemctl status nginx
+    
+You can also check if the server is working by writing your ip machine on a local browser
+
+Make this command to check your ip address on the server :
+    
+    $ ip a
+
+    
+##Store NGINX logs in Mongo
+
+To edit fluentD config opent this file 
+
+    $  vi /etc/td-agent/td-agent.conf
+    
+Then remove all the default config and replace it by 
+
+    <source>
+      @type tail
+      path /var/log/nginx/access.log
+      pos_file /var/log/td-agent/nginx-access.log.pos 
+      tag nginx.access
+      format nginx 
+    </source>
+    
+    <source>
+          @type tail
+          path /var/log/nginx/error.log
+          pos_file /var/log/td-agent/nginx-error.log.pos 
+          tag nginx.error
+          format nginx 
+        </source>
+    
+    <match nginx.**>
+      @type mongo
+      database fluentdLogs
+      collection nginx
+    </match>
+    
+    <match php-fpm.**>
+          @type mongo
+          database fluentdLogs
+          collection php-fpm
+        </match>
+    
+##Install Fluentd Mongo plugin
+
+First install make and gcc
+    
+    $ apt-get install make gcc
+    
+After that execute this command 
+    
+    /usr/sbin/td-agent-gem install fluent-plugin-mongo
+    
+## Manage permissions
+FLuentd user doesn't have permission in nginx logs files.  
+Add the td-agent user to the adm group.
+
+    $ usermod -a -G adm td-agent
+
+Then restart the td-agent.service
+
+    $ systemctl restart td-agent.service
+    
+## Check the data in Mongo
+First, make sure that there is log in Nginx, try to open the default webpage og NGINX.
+
+Then open the Mongo shell
+
+    $ mongo
+ 
+Then check that the database exist with show dbs
+If you find fluentdLogs in the list then do
+    
+    use fluentdLogs
+    
+And then check that are in mongo with this command
+
+    db.nginx.find()
+  
+
+
+//TODO install php-fpm 
+//TODO connect nginx error to fluentd
+//TODO connect php-fpm logs to fluend (DO NOT FORGET TO STORE THEM ON ANOTHER COLLECTION)
+https://www.rosehosting.com/blog/install-php-7-1-with-nginx-on-an-ubuntu-16-04-vps/
+//TODO MAYBE log rotation 
+
+## Install PHP and PHP7.4-FPM
+
+
+### Add repository
+Download GPG key
+
+    $ apt -y install lsb-release apt-transport-https ca-certificates 
+    $ wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+    
+Then add the repository
+
+    $ echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php.list
+
+### Install PHP7.4
+
+    $ apt update
+    $ apt -y install php7.4
+    
+### Disable Apache
+
+    $ systemctl disable --now apache2
+
+### Install fpm extension
+
+    $ apt-get install php7.4-fpm
+
+Check if FPM is running
+
+    $ systemctl status php7.4-fpm
+    
+## NGINX configuration
+First desactivate default configuration
+    
+    $ rm /etc/nginx/sites-enabled/default
+    
+Edit the following in /etc/nginx/sites-available/cldremediation.com
+
+    $ vim /etc/nginx/sites-available/cldremediation.com
+
+Copy and past this :
+    
+    server {
+            listen 80;
+            server_name cldremediation.com www.cldremediation.com;
+            root /var/www/cldremediation.com;
+            index index.php;
+    
+            location / {
+                    try_files $uri $uri/ =404;
+            }
+    
+            location ~ \.php$ {
+                fastcgi_pass unix:/run/php/php7.1-fpm.sock;
+                include snippets/fastcgi-php.conf;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            }
+    
+            location ~ /\.ht {
+                    deny all;
+            }
+    }
+
+Save and close the file and then make symbolic link to enable the server block
+
+    sudo ln -s /etc/nginx/sites-available/cldremediation.com /etc/nginx/sites-enabled/cldremediation.com
+
+
