@@ -1,6 +1,8 @@
 # Documentation
 This documentation is written for Debian GNU/Linux 9.11 (stretch)  
 
+Author : Berdoz Noé, Pereira Gabriel
+
 You can check your Debian version with this command :
 
     $ lsb_release -a
@@ -150,90 +152,44 @@ You can also check if the server is working by writing your ip machine on a loca
 Make this command to check your ip address on the server :
     
     $ ip a
-
     
-##Store NGINX logs in Mongo
-
-To edit fluentD config opent this file 
-
-    $  vi /etc/td-agent/td-agent.conf
+## NGINX configuration
+First desactivate default configuration
     
-Then remove all the default config and replace it by 
-
-    <source>
-      @type tail
-      path /var/log/nginx/access.log
-      pos_file /var/log/td-agent/nginx-access.log.pos 
-      tag nginx.access
-      format nginx 
-    </source>
+    $ rm /etc/nginx/sites-enabled/default
     
-    <source>
-          @type tail
-          path /var/log/nginx/error.log
-          pos_file /var/log/td-agent/nginx-error.log.pos 
-          tag nginx.error
-          format nginx 
-        </source>
-    
-    <match nginx.**>
-      @type mongo
-      database fluentdLogs
-      collection nginx
-    </match>
-    
-    <match php-fpm.**>
-          @type mongo
-          database fluentdLogs
-          collection php-fpm
-        </match>
-    
-##Install Fluentd Mongo plugin
+Edit the following in /etc/nginx/sites-available/cldremediation.com
 
-First install make and gcc
+    $ vim /etc/nginx/sites-available/cldremediation.com
+
+Copy and past this :
     
-    $ apt-get install make gcc
+    server {
+            listen 80;
+            server_name cldremediation.com www.cldremediation.com;
+            root /var/www/cldremediation.com;
+            index index.php;
     
-After that execute this command 
+            location / {
+                    try_files $uri $uri/ =404;
+            }
     
-    /usr/sbin/td-agent-gem install fluent-plugin-mongo
+            location ~ \.php$ {
+                fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+                include snippets/fastcgi-php.conf;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            }
     
-## Manage permissions
-FLuentd user doesn't have permission in nginx logs files.  
-Add the td-agent user to the adm group.
+            location ~ /\.ht {
+                    deny all;
+            }
+    }
 
-    $ usermod -a -G adm td-agent
+Save and close the file and then make symbolic link to enable the server block
 
-Then restart the td-agent.service
-
-    $ systemctl restart td-agent.service
+    sudo ln -s /etc/nginx/sites-available/cldremediation.com /etc/nginx/sites-enabled/cldremediation.com
     
-## Check the data in Mongo
-First, make sure that there is log in Nginx, try to open the default webpage og NGINX.
-
-Then open the Mongo shell
-
-    $ mongo
- 
-Then check that the database exist with show dbs
-If you find fluentdLogs in the list then do
-    
-    use fluentdLogs
-    
-And then check that are in mongo with this command
-
-    db.nginx.find()
-  
-
-
-//TODO install php-fpm 
-//TODO connect nginx error to fluentd
-//TODO connect php-fpm logs to fluend (DO NOT FORGET TO STORE THEM ON ANOTHER COLLECTION)
-https://www.rosehosting.com/blog/install-php-7-1-with-nginx-on-an-ubuntu-16-04-vps/
-//TODO MAYBE log rotation 
-
 ## Install PHP and PHP7.4-FPM
-
 
 ### Add repository
 Download GPG key
@@ -262,40 +218,140 @@ Check if FPM is running
 
     $ systemctl status php7.4-fpm
     
-## NGINX configuration
-First desactivate default configuration
-    
-    $ rm /etc/nginx/sites-enabled/default
-    
-Edit the following in /etc/nginx/sites-available/cldremediation.com
+## Check if PHP is working well
+This is optional
 
-    $ vim /etc/nginx/sites-available/cldremediation.com
+Edit the index file in /var/www/cldremediation.com/
 
-Copy and past this :
+    $ vim var/www/cldremediation.com/index.php
+
+Copy and past this inside
+
+    <html>
+     <head>
+      <title>Test PHP</title>
+     </head>
+     <body>
+     <?php echo '<p>Hello World</p>'; ?>
+     </body>
+    </html>
+
+### Change the host file in your system 
+
+Now, if you change the host file in your system, you can access the index.php by
+entering cldremediation.com on your browser
+
+For example, in a Windows machine, go to C:\Windows\System32\drivers\etc
+Open the host file as an administrator and add your Debian ip machine with the url of your website at the bottom of the file.
+It should look like this:
+
+    # localhost name resolution is handled within DNS itself.
+    #	127.0.0.1       localhost
+    #	::1             localhost
+    192.168.XXX.XXX     cldremediation.com
     
-    server {
-            listen 80;
-            server_name cldremediation.com www.cldremediation.com;
-            root /var/www/cldremediation.com;
-            index index.php;
+Replace the XXX with your Debian machine's IP address.
+
+Now go to cldremediation.com with a browser.
+You should see a page showing your index.php with the 'Hello World'.
+
+##Install Fluentd Mongo plugin
+
+First install make and gcc
     
-            location / {
-                    try_files $uri $uri/ =404;
-            }
+    $ apt-get install make gcc
     
-            location ~ \.php$ {
-                fastcgi_pass unix:/run/php/php7.1-fpm.sock;
-                include snippets/fastcgi-php.conf;
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            }
+After that execute this command 
     
-            location ~ /\.ht {
-                    deny all;
-            }
-    }
+    /usr/sbin/td-agent-gem install fluent-plugin-mongo
+    
+## Manage permissions
+FLuentd user doesn't have permission in nginx logs files.  
+Add the td-agent user to the adm group.
 
-Save and close the file and then make symbolic link to enable the server block
+    $ usermod -a -G adm td-agent
 
-    sudo ln -s /etc/nginx/sites-available/cldremediation.com /etc/nginx/sites-enabled/cldremediation.com
+Then restart the td-agent.service
+
+    $ systemctl restart td-agent.service
+
+Now change the permission of the php7.4-fpm.log file in
+/var/log/
+    
+    $chown td-agent:td-agent php7.4-fpm.log
+
+##Store NGINX and PHP7.4-FPM logs in Mongo
+
+To edit fluentD config open this file 
+
+    $  vi /etc/td-agent/td-agent.conf
+    
+Then remove all the default config and replace it by 
+
+    <source>
+      @type tail
+      path /var/log/nginx/access.log
+      pos_file /var/log/td-agent/nginx-access.log.pos 
+      tag nginx.access
+      format nginx 
+    </source>
+    
+    <source>
+      @type tail
+      path /var/log/nginx/error.log
+      pos_file /var/log/td-agent/nginx-error.log.pos 
+      tag nginx.error
+      format nginx 
+    </source>
+    
+    <match nginx.**>
+      @type mongo
+      database fluentdLogs
+      collection nginx
+    </match>
+    
+    <source>
+      @type tail
+      path /var/log/php7.4-fpm.log
+      pos_file /var/log/td.agent/php7.4\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)-fpm-logs.log.pos
+      tag php7.4-fpm
+      format /^\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)$/
+    </source>
+    
+    <match php7.4-fpm.**>
+      @type mongo
+      database fluentdLogs
+      collection phpFpm
+    </match>
+    
+Now, restart the services
+
+    $ systemctl restart nginx php7.4-fpm td-agent
+    
+Then check that their status are active
+
+    $ systemctl status nginx php7.4-fpm td-agent    
+
+## Check the data in Mongo
+First, make sure that there is logs in Nginx, try to open the default webpage or NGINX.
+
+Then open the Mongo shell.
+
+    $ mongo
+ 
+Then check that the database exist with this command:
+
+    $ show dbs
+
+If you find fluentdLogs in the list then do
+    
+    $ use fluentdLogs
+    
+And then check that logs are in mongo with this command
+
+    $ db.nginx.find()
+    
+    $ db.phpFpm.find()
 
 
+You should find the logs.
