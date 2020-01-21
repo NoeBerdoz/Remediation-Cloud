@@ -9,20 +9,17 @@ You can check your Debian version with this command :
 
 ## Set up your system
 First of all make sure that your system is up to date
-Run :
-    
-    $ apt update
-    
-And
-    
-    $ apt upgrade
+Run : 
+
+    (Root) $ apt update
+    (Root) $ apt upgrade
 
 Then, it's highly recommended that you set up NTP daemon.
 
 ### Set up NTP
-Install NTP :
-    
-    $ apt-get install ntp
+Install NTP:
+
+    (Root) $ apt-get install ntp
 
 Type this command to see servers you are syncing with.
 
@@ -32,9 +29,9 @@ If you get this problem
 
     No association ID's returned
     
-Do the following and then try again :
+-> do the following and then try again :
 
-    $ dpkg-reconfigure ntp
+    (Root) $ dpkg-reconfigure ntp
     
 You should see something like this :
 
@@ -53,20 +50,21 @@ You can see the maximum number of file descriptors with this command :
 
     $ ulimit -n
 
-If your console show less then 65535 do the following :
-Go to /etc/security/limits.conf and add the following lines at the end of the file :
-  
+If the number is less than `65535` do the following :
+Go to `/etc/security/limits.conf` and add this config at the end of the file :
+    
+    (Root) $ echo " 
     root soft nofile 65536
     root hard nofile 65536
     * soft nofile 65536
-    * hard nofile 65536
+    * hard nofile 65536" >> /etc/security/limits.conf
    
-Then reboot your machine
+Then reboot your shell
 
 ## Optimize Network Kernel Parameters
-Add these lines to your file at /etc/sysctl.conf
+Add this config to `/etc/sysctl.conf`
 
-    net.core.somaxconn = 1024
+    (Root) $ echo "net.core.somaxconn = 1024
     net.core.netdev_max_backlog = 5000
     net.core.rmem_max = 16777216
     net.core.wmem_max = 16777216
@@ -75,44 +73,41 @@ Add these lines to your file at /etc/sysctl.conf
     net.ipv4.tcp_max_syn_backlog = 8096
     net.ipv4.tcp_slow_start_after_idle = 0
     net.ipv4.tcp_tw_reuse = 1
-    net.ipv4.ip_local_port_range = 10240 65535
+    net.ipv4.ip_local_port_range = 10240 65535" >> /etc/sysctl.conf
     
  After that, type this command so the changes can take effect :
  
-    $ sysctl -p
+    (Root) $ sysctl -p
     
 ## Install curl
     
-    $ sudo apt install curl
+    (Root) $ apt install curl
 
 ## Install Fluentd
     
-    $ curl -L https://toolbelt.treasuredata.com/sh/install-debian-stretch-td-agent3.sh | sh
+    (Root/Automatic sudo) $ curl -L https://toolbelt.treasuredata.com/sh/install-debian-stretch-td-agent3.sh | sh
 
 ### Launch Daemon
 
-    $ systemctl start td-agent.service
+    (Root/Auto root) $ systemctl start td-agent.service
     $ systemctl status td-agent.service
     
 ## Install MongoDB
 
-    $ curl https://www.mongodb.org/static/pgp/server-4.0.asc | sudo apt-key add -
+    (Root) $ curl https://www.mongodb.org/static/pgp/server-4.0.asc | apt-key add -
 
-Next we will create a source list for the MongoDB repo.
+Next we will create a source list for the MongoDB repo.  
+Add conf in `/etc/apt/sources.list.d/mongodb-org-4.0.list`
 
-    $ nano /etc/apt/sources.list.d/mongodb-org-4.0.list
-
-Paste the following in mongodb-org-4.0.list
-
-    deb http://repo.mongodb.org/apt/debian stretch/mongodb-org/4.0 main
+    (Root) $ echo "deb http://repo.mongodb.org/apt/debian stretch/mongodb-org/4.0 main" >> /etc/apt/sources.list.d/mongodb-org-4.0.list
 
 Save and close the file, then update your package cache
 
-    $ apt update
+    (Root) $ apt update
 
 Install the mongodb-org package
 
-    $ apt-get install mongodb-org
+    (Root) $ apt-get install mongodb-org
 
 Enable mongod service and then start it
 
@@ -227,14 +222,16 @@ Edit the index file in /var/www/cldremediation.com/
 
 Copy and past this inside
 
-    <html>
-     <head>
-      <title>Test PHP</title>
-     </head>
-     <body>
-     <?php echo '<p>Hello World</p>'; ?>
-     </body>
-    </html>
+```php
+<html>
+    <head>
+        <title>Test PHP</title>
+    </head>
+    <body>
+        <?php echo '<p>Hello World</p>'; ?>
+    </body>
+</html>
+```
 
 ### Change the host file in your system 
 
