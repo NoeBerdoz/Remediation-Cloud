@@ -25,15 +25,13 @@ Type this command to see servers you are syncing with.
 
     $ ntpq -p
     
-If you get this problem
-
-    No association ID's returned
+If you get this problem : **No association ID's returned**
     
 -> do the following and then try again :
 
     (Root) $ dpkg-reconfigure ntp
     
-You should see something like this :
+You should see a array with this structure :
 
     $ ntpq -p
     
@@ -216,7 +214,7 @@ Check if FPM is running
 ## Check if PHP is working well
 This is optional
 
-Edit the index file in /var/www/cldremediation.com/
+Edit the index file in **/var/www/cldremediation.com/**
 
     $ vim var/www/cldremediation.com/index.php
 
@@ -252,7 +250,7 @@ Replace the XXX with your Debian machine's IP address.
 Now go to cldremediation.com with a browser.
 You should see a page showing your index.php with the 'Hello World'.
 
-##Install Fluentd Mongo plugin
+## Install Fluentd Mongo plugin
 
 First install make and gcc
     
@@ -263,6 +261,7 @@ After that execute this command
     /usr/sbin/td-agent-gem install fluent-plugin-mongo
     
 ## Manage permissions
+**First restart server**  
 FLuentd user doesn't have permission in nginx logs files.  
 Add the td-agent user to the adm group.
 
@@ -275,13 +274,13 @@ Then restart the td-agent.service
 Now change the permission of the php7.4-fpm.log file in
 /var/log/
     
-    $chown td-agent:td-agent php7.4-fpm.log
+    $ chown td-agent:td-agent /var/log/php7.4-fpm.log
 
-##Store NGINX and PHP7.4-FPM logs in Mongo
+## Store NGINX and PHP7.4-FPM logs in Mongo
 
 To edit fluentD config open this file 
 
-    $  vi /etc/td-agent/td-agent.conf
+    $  vim /etc/td-agent/td-agent.conf
     
 Then remove all the default config and replace it by 
 
@@ -331,6 +330,10 @@ Then check that their status are active
 
 ## Check the data in Mongo
 First, make sure that there is logs in Nginx, try to open the default webpage or NGINX.
+
+Start mongo
+
+    $ sudo service mongod start
 
 Then open the Mongo shell.
 
