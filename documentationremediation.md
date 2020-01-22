@@ -109,8 +109,8 @@ Install the mongodb-org package
 
 Enable mongod service and then start it
 
-    $ systemctl enable mongod
-    $ systemctl start mongod
+    (Root/Auto root) $ systemctl enable mongod
+    (Root/Auto root) $ systemctl start mongod
     
 Check the service status
 
@@ -130,82 +130,79 @@ You should see an output like this
                
 ## Install NGINX
 
-    $ apt-get install nginx
+    (Root) $ apt-get install nginx
 
 Now enable it
 
-    $ systemctl enable nginx
+    (Root/Auto root) $ systemctl enable nginx
     
 Check if the service NGINX is running
 
     $ systemctl status nginx
     
-You can also check if the server is working by writing your ip machine on a local browser
+You can also check if the server is working by accessing your machine ip in a local web browser
 
-Make this command to check your ip address on the server :
+Use this command to check your ip address on the server :
     
     $ ip a
     
 ## NGINX configuration
-First desactivate default configuration
+First delete the default configuration
     
-    $ rm /etc/nginx/sites-enabled/default
+    (Root) $ rm /etc/nginx/sites-enabled/default
     
-Edit the following in /etc/nginx/sites-available/cldremediation.com
+Create the config for the "cldremediation" website by creating the `/etc/nginx/sites-available/cldremediation.com` file
 
-    $ vim /etc/nginx/sites-available/cldremediation.com
-
-Copy and past this :
-    
+    (Root) $  echo "
     server {
-            listen 80;
-            server_name cldremediation.com www.cldremediation.com;
-            root /var/www/cldremediation.com;
-            index index.php;
-    
-            location / {
-                    try_files $uri $uri/ =404;
-            }
-    
-            location ~ \.php$ {
-                fastcgi_pass unix:/run/php/php7.4-fpm.sock;
-                include snippets/fastcgi-php.conf;
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            }
-    
-            location ~ /\.ht {
-                    deny all;
-            }
-    }
+        listen 80;
+        server_name cldremediation.com www.cldremediation.com;
+        root /var/www/cldremediation.com;
+        index index.php;
 
-Save and close the file and then make symbolic link to enable the server block
+        location / {
+                try_files $uri $uri/ =404;
+        }
 
-    sudo ln -s /etc/nginx/sites-available/cldremediation.com /etc/nginx/sites-enabled/cldremediation.com
+        location ~ \.php$ {
+            fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+            include snippets/fastcgi-php.conf;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        }
+
+        location ~ /\.ht {
+                deny all;
+        }
+    }" >> /etc/nginx/sites-available/cldremediation.com
+
+Make symbolic link to the config to enable the server block
+
+    (Root) $ ln -s /etc/nginx/sites-available/cldremediation.com /etc/nginx/sites-enabled/cldremediation.com
     
 ## Install PHP and PHP7.4-FPM
 
 ### Add repository
 Download GPG key
 
-    $ apt -y install lsb-release apt-transport-https ca-certificates 
-    $ wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
+    (Root) $ apt -y install lsb-release apt-transport-https ca-certificates 
+    (Root) $ wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
     
 Then add the repository
 
-    $ echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php.list
+    (Root) $ echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
 
 ### Install PHP7.4
 
-    $ apt update
-    $ apt -y install php7.4
+    (Root) $ apt update
+    (Root) $ apt -y install php7.4
     
 ### Disable Apache
 
-    $ systemctl disable --now apache2
+    (Root) $ systemctl disable --now apache2
 
 ### Install fpm extension
 
-    $ apt-get install php7.4-fpm
+    (Root) $ apt-get install php7.4-fpm
 
 Check if FPM is running
 
@@ -214,11 +211,14 @@ Check if FPM is running
 ## Check if PHP is working well
 This is optional
 
-Edit the index file in **/var/www/cldremediation.com/**
+Create the directory and index file of the website in `/var/www/`
 
-    $ vim var/www/cldremediation.com/index.php
+    (Root) $ mkdir /var/www/cldremediation.com/
+    (Root) $ touch /var/www/cldremediation.com/index.php
 
-Copy and past this inside
+Insert the following php code inside `/var/www/cldremediation.com/index.php` to test out the web server
+
+    (Root) $ vim /var/www/cldremediation.com/index.php
 
 ```php
 <html>
@@ -230,8 +230,11 @@ Copy and past this inside
     </body>
 </html>
 ```
+copy-pasteable command version: 
 
-### Change the host file in your system 
+    (Root) $ echo "<html><head><title>Test PHP</title></head><body><?php echo '<p>Hello World</p>'; ?></body></html>" > /var/www/cldremediation.com/index.php
+
+### Change the host file in your system (optionnal)
 
 Now, if you change the host file in your system, you can access the index.php by
 entering cldremediation.com on your browser
@@ -254,75 +257,81 @@ You should see a page showing your index.php with the 'Hello World'.
 
 First install make and gcc
     
-    $ apt-get install make gcc
+    (Root) $ apt-get install make gcc
     
 After that execute this command 
     
-    /usr/sbin/td-agent-gem install fluent-plugin-mongo
+    (Root) $ td-agent-gem install fluent-plugin-mongo
     
 ## Manage permissions
-**First restart server**  
+At first **restart the server**  
+
 FLuentd user doesn't have permission in nginx logs files.  
 Add the td-agent user to the adm group.
 
-    $ usermod -a -G adm td-agent
+    (Root) $ usermod -a -G adm td-agent
 
 Then restart the td-agent.service
 
-    $ systemctl restart td-agent.service
+    (Root/Auto root) $ systemctl restart td-agent.service
 
 Now change the permission of the php7.4-fpm.log file in
 /var/log/
     
-    $ chown td-agent:td-agent /var/log/php7.4-fpm.log
+    (Root) $ chown td-agent:td-agent /var/log/php7.4-fpm.log
 
 ## Store NGINX and PHP7.4-FPM logs in Mongo
 
 To edit fluentD config open this file 
 
-    $  vim /etc/td-agent/td-agent.conf
+    
     
 Then remove all the default config and replace it by 
+    
+    (Root) $ vim /etc/td-agent/td-agent.conf
 
-    <source>
-      @type tail
-      path /var/log/nginx/access.log
-      pos_file /var/log/td-agent/nginx-access.log.pos 
-      tag nginx.access
-      format nginx 
-    </source>
-    
-    <source>
-      @type tail
-      path /var/log/nginx/error.log
-      pos_file /var/log/td-agent/nginx-error.log.pos 
-      tag nginx.error
-      format nginx 
-    </source>
-    
-    <match nginx.**>
-      @type mongo
-      database fluentdLogs
-      collection nginx
-    </match>
-    
-    <source>
-      @type tail
-      path /var/log/php7.4-fpm.log
-      pos_file /var/log/td.agent/php7.4\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)-fpm-logs.log.pos
-      tag php7.4-fpm
-      format /^\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)$/
-    </source>
-    
-    <match php7.4-fpm.**>
-      @type mongo
-      database fluentdLogs
-      collection phpFpm
-    </match>
-    
+```xml
+<source>
+    @type tail
+    path /var/log/nginx/access.log
+    pos_file /var/log/td-agent/nginx-access.log.pos 
+    tag nginx.access
+    format nginx 
+</source>
+
+<source>
+    @type tail
+    path /var/log/nginx/error.log
+    pos_file /var/log/td-agent/nginx-error.log.pos 
+    tag nginx.error
+    format nginx 
+</source>
+
+<match nginx.**>
+    @type mongo
+    database fluentdLogs
+    collection nginx
+</match>
+
+<source>
+    @type tail
+    path /var/log/php7.4-fpm.log
+    pos_file /var/log/td.agent/php7.4\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)-fpm-logs.log.pos
+    tag php7.4-fpm
+    format /^\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)$/
+</source>
+
+<match php7.4-fpm.**>
+    @type mongo
+    database fluentdLogs
+    collection phpFpm
+</match>
+```    
+
+***WARNING*** , doesn't work xd  
 Now, restart the services
 
-    $ systemctl restart nginx php7.4-fpm td-agent
+    (Root) $ systemctl restart nginx php7.4-fpm td-agent
     
 Then check that their status are active
 
@@ -333,7 +342,7 @@ First, make sure that there is logs in Nginx, try to open the default webpage or
 
 Start mongo
 
-    $ sudo service mongod start
+    (Root) $ service mongod start
 
 Then open the Mongo shell.
 
@@ -341,17 +350,17 @@ Then open the Mongo shell.
  
 Then check that the database exist with this command:
 
-    $ show dbs
+    mongo > show dbs
 
 If you find fluentdLogs in the list then do
     
-    $ use fluentdLogs
+    mongo > use fluentdLogs
     
 And then check that logs are in mongo with this command
 
-    $ db.nginx.find()
+    mongo > db.nginx.find()
     
-    $ db.phpFpm.find()
+    mongo > db.phpFpm.find()
 
 
 You should find the logs.
