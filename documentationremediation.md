@@ -16,6 +16,15 @@ Run :
 
 Then, it's highly recommended that you set up NTP daemon.
 
+### Install sudo
+
+    (Root) $ apt-get install sudo
+
+
+### Install VIM
+
+    (Root) $ apt-get install vim
+
 ### Set up NTP
 Install NTP:
 
@@ -43,7 +52,7 @@ You should see a array with this structure :
      mirror          .INIT.          16 u    -   64    0    0.000    0.000   0.001
 
 
-## Increase Max # of File Descriptors
+### Increase Max # of File Descriptors
 You can see the maximum number of file descriptors with this command :
 
     $ ulimit -n
@@ -59,7 +68,7 @@ Go to `/etc/security/limits.conf` and add this config at the end of the file :
    
 Then reboot your shell
 
-## Optimize Network Kernel Parameters
+### Optimize Network Kernel Parameters
 Add this config to `/etc/sysctl.conf`
 
     (Root) $ echo "net.core.somaxconn = 1024
@@ -77,7 +86,7 @@ Add this config to `/etc/sysctl.conf`
  
     (Root) $ sysctl -p
     
-## Install curl
+### Install curl
     
     (Root) $ apt install curl
 
@@ -153,7 +162,8 @@ First delete the default configuration
     
 Create the config for the "cldremediation" website by creating the `/etc/nginx/sites-available/cldremediation.com` file
 
-    (Root) $  echo "
+    (Root) $  vim /etc/nginx/sites-available/cldremediation.com
+    
     server {
         listen 80;
         server_name cldremediation.com www.cldremediation.com;
@@ -173,7 +183,7 @@ Create the config for the "cldremediation" website by creating the `/etc/nginx/s
         location ~ /\.ht {
                 deny all;
         }
-    }" >> /etc/nginx/sites-available/cldremediation.com
+    }
 
 Make symbolic link to the config to enable the server block
 
@@ -196,9 +206,9 @@ Then add the repository
     (Root) $ apt update
     (Root) $ apt -y install php7.4
     
-### Disable Apache
+### Remove Apache
 
-    (Root) $ systemctl disable --now apache2
+    (Root) $ apt remove apache2
 
 ### Install fpm extension
 
@@ -207,6 +217,7 @@ Then add the repository
 Check if FPM is running
 
     $ systemctl status php7.4-fpm
+    
     
 ## Check if PHP is working well
 This is optional
@@ -233,6 +244,11 @@ Insert the following php code inside `/var/www/cldremediation.com/index.php` to 
 copy-pasteable command version: 
 
     (Root) $ echo "<html><head><title>Test PHP</title></head><body><?php echo '<p>Hello World</p>'; ?></body></html>" > /var/www/cldremediation.com/index.php
+    
+### Restart Nginx and Php-fpm
+
+    $ systemctl restart nginx php7.4-fpm
+    
 
 ### Change the host file in your system (optionnal)
 
@@ -252,6 +268,7 @@ Replace the XXX with your Debian machine's IP address.
 
 Now go to cldremediation.com with a browser.
 You should see a page showing your index.php with the 'Hello World'.
+
 
 ## Install Fluentd Mongo plugin
 
@@ -284,51 +301,46 @@ Now change the permission of the php7.4-fpm.log file in
 
 To edit fluentD config open this file 
 
-    
-    
-Then remove all the default config and replace it by 
-    
     (Root) $ vim /etc/td-agent/td-agent.conf
 
-```xml
-<source>
-    @type tail
-    path /var/log/nginx/access.log
-    pos_file /var/log/td-agent/nginx-access.log.pos 
-    tag nginx.access
-    format nginx 
-</source>
+Then remove all the default config and replace it by 
+    
+    <source>
+        @type tail
+        path /var/log/nginx/access.log
+        pos_file /var/log/td-agent/nginx-access.log.pos 
+        tag nginx.access
+        format nginx 
+    </source>
+    
+    <source>
+        @type tail
+        path /var/log/nginx/error.log
+        pos_file /var/log/td-agent/nginx-error.log.pos 
+        tag nginx.error
+        format nginx 
+    </source>
+    
+    <match nginx.**>
+        @type mongo
+        database fluentdLogs
+        collection nginx
+    </match>
+    
+    <source>
+        @type tail
+        path /var/log/php7.4-fpm.log
+        pos_file /var/log/td-agent/php7.4-fpm-logs.log.pos
+        tag php7.4-fpm
+        format /^\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)$/
+    </source>
+    
+    <match php7.4-fpm.**>
+        @type mongo
+        database fluentdLogs
+        collection phpFpm
+    </match>  
 
-<source>
-    @type tail
-    path /var/log/nginx/error.log
-    pos_file /var/log/td-agent/nginx-error.log.pos 
-    tag nginx.error
-    format nginx 
-</source>
-
-<match nginx.**>
-    @type mongo
-    database fluentdLogs
-    collection nginx
-</match>
-
-<source>
-    @type tail
-    path /var/log/php7.4-fpm.log
-    pos_file /var/log/td.agent/php7.4-fpm-logs.log.pos
-    tag php7.4-fpm
-    format /^\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)$/
-</source>
-
-<match php7.4-fpm.**>
-    @type mongo
-    database fluentdLogs
-    collection phpFpm
-</match>
-```    
-
-***WARNING*** , doesn't work xd  
 Now, restart the services
 
     (Root) $ systemctl restart nginx php7.4-fpm td-agent
