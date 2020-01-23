@@ -316,7 +316,7 @@ Then remove all the default config and replace it by
 <source>
     @type tail
     path /var/log/php7.4-fpm.log
-    pos_file /var/log/td.agent/php7.4\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)-fpm-logs.log.pos
+    pos_file /var/log/td.agent/php7.4-fpm-logs.log.pos
     tag php7.4-fpm
     format /^\[(?<logtime>[^\]]*)\] (?<level>[A-Z]*): (?<message>.*)$/
 </source>
