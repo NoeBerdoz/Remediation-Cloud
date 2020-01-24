@@ -97,6 +97,7 @@ Add this config to `/etc/sysctl.conf`
 ### Launch Daemon
 
     (Root/Auto root) $ systemctl start td-agent.service
+
     $ systemctl status td-agent.service
     
 ## Install MongoDB
@@ -247,7 +248,6 @@ copy-pasteable command version:
 ### Restart Nginx and Php-fpm
 
     $ systemctl restart nginx php7.4-fpm
-    
 
 ### Change the host file in your system (optionnal)
 
@@ -346,19 +346,22 @@ Restart your server
 
 Then, restart the services
 
+    (Root) $ service mongod start
     (Root) $ systemctl restart nginx php7.4-fpm td-agent
     
 And then, check that their status are active
 
+    $ service mongod status
     $ systemctl status nginx php7.4-fpm td-agent
 
 ## Check the data in Mongo
-First, make sure that there is logs in NGINX, try to open the default webpage.
-Go to the ip address of your server with a browser.
 
-After that, start mongo
+First restart services to create the database
 
-    (Root) $ service mongod start
+    (Root) $ systemctl restart nginx php7.4-fpm td-agent
+
+After, make sure that there is logs in NGINX, try to open the default webpage.
+Go to the ip address of your server with a browser to generate log.
 
 Then open the Mongo shell.
 
@@ -368,15 +371,18 @@ Then check that the database exists with this command:
 
     mongo > show dbs
 
-You should find fluentdLogs in the list
+If database **fluentdLogs** does not appear in the list, quit mongo and restart services
+
+    (Root) $ systemctl restart nginx php7.4-fpm td-agent
+
+Select database **fluentdLogs** to use it
     
     mongo > use fluentdLogs
-    
+
 And then check that logs are in mongo with this command
 
     mongo > db.nginx.find()
     
     mongo > db.phpFpm.find()
-
 
 You should find the logs.
