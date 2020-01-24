@@ -341,13 +341,17 @@ Then remove all the default config and replace it by
         collection phpFpm
     </match>  
 
+Restart server
+
+    (Root) $ shutdown -r now
+
 Now, restart the services
 
     (Root) $ systemctl restart nginx php7.4-fpm td-agent
     
 Then check that their status are active
 
-    $ systemctl status nginx php7.4-fpm td-agent    
+    $ systemctl status nginx php7.4-fpm td-agent
 
 ## Check the data in Mongo
 First, make sure that there is logs in Nginx, try to open the default webpage or NGINX.
