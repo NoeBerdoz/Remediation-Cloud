@@ -1,7 +1,7 @@
 # Documentation
 This documentation is written for Debian GNU/Linux 9.11 (stretch)  
 
-Author : Berdoz Noé, Pereira Gabriel
+Author : Berdoz Noé, Pereira Gabriel, Bergmann Florian, Maître Nicolas
 
 You can check your Debian version with this command :
 
@@ -155,7 +155,7 @@ Use this command to check your ip address on the server :
     
     $ ip a
     
-## NGINX configuration
+### NGINX configuration
 First delete the default configuration
     
     (Root) $ rm /etc/nginx/sites-enabled/default
@@ -219,8 +219,7 @@ Check if FPM is running
     $ systemctl status php7.4-fpm
     
     
-## Check if PHP is working well
-This is optional
+## Check if PHP is working well (optional)
 
 Create the directory and index file of the website in `/var/www/`
 
@@ -341,22 +340,23 @@ Then remove all the default config and replace it by
         collection phpFpm
     </match>  
 
-Restart server
+Restart your server
 
     (Root) $ shutdown -r now
 
-Now, restart the services
+Then, restart the services
 
     (Root) $ systemctl restart nginx php7.4-fpm td-agent
     
-Then check that their status are active
+And then, check that their status are active
 
     $ systemctl status nginx php7.4-fpm td-agent
 
 ## Check the data in Mongo
-First, make sure that there is logs in Nginx, try to open the default webpage or NGINX.
+First, make sure that there is logs in NGINX, try to open the default webpage.
+Go to the ip address of your server with a browser.
 
-Start mongo
+After that, start mongo
 
     (Root) $ service mongod start
 
@@ -364,11 +364,11 @@ Then open the Mongo shell.
 
     $ mongo
  
-Then check that the database exist with this command:
+Then check that the database exists with this command:
 
     mongo > show dbs
 
-If you find fluentdLogs in the list then do
+You should find fluentdLogs in the list
     
     mongo > use fluentdLogs
     
